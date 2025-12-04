@@ -27,7 +27,7 @@ st.markdown("""
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/1256/1256628.png", width=50)
     st.title("DataStudio Pro")
-    st.caption("v2.6 Fixed Edition")
+    st.caption("v3.2 Final Edition")
     st.divider()
 
     selected_page = st.radio(
@@ -86,10 +86,15 @@ if st.session_state.df is not None:
         dup_color = "#ff4b4b" if dups > 0 else "inherit"
         missing = df.isnull().sum().sum()
         
-        with c1: st.markdown(f"<div class='metric-card'><div class='metric-value'>{len(df):,}</div><div class='metric-label'>Total Rows</div></div>", unsafe_allow_html=True)
-        with c2: st.markdown(f"<div class='metric-card'><div class='metric-value'>{len(df.columns)}</div><div class='metric-label'>Columns</div></div>", unsafe_allow_html=True)
-        with c3: st.markdown(f"<div class='metric-card'><div class='metric-value' style='color:{dup_color}'>{dups:,}</div><div class='metric-label'>Exact Duplicates</div></div>", unsafe_allow_html=True)
-        with c4: st.markdown(f"<div class='metric-card'><div class='metric-value'>{missing:,}</div><div class='metric-label'>Missing Values</div></div>", unsafe_allow_html=True)
+        with c1: 
+            st.markdown(f"<div class='metric-card'><div class='metric-value'>{len(df):,}</div><div class='metric-label'>Total Rows</div></div>", unsafe_allow_html=True)
+        with c2: 
+            st.markdown(f"<div class='metric-card'><div class='metric-value'>{len(df.columns)}</div><div class='metric-label'>Columns</div></div>", unsafe_allow_html=True)
+        with c3: 
+            st.markdown(f"<div class='metric-card'><div class='metric-value' style='color:{dup_color}'>{dups:,}</div><div class='metric-label'>Exact Duplicates</div></div>", unsafe_allow_html=True)
+        with c4: 
+            st.markdown(f"<div class='metric-card'><div class='metric-value'>{missing:,}</div><div class='metric-label'>Missing Values</div></div>", unsafe_allow_html=True)
+        
         st.subheader("📄 Data Preview")
         st.dataframe(df.head(10), use_container_width=True)
 
@@ -138,6 +143,7 @@ if st.session_state.df is not None:
                 active_ids = target_rows['_clean_id'].unique()
                 
                 if show_history:
+                    # Match using the CLEAN ID
                     filtered_df = df[df['_clean_id'].isin(active_ids)].copy()
                 else:
                     filtered_df = target_rows.copy()
@@ -151,13 +157,18 @@ if st.session_state.df is not None:
                     sorted_df = filtered_df.sort_values(by=['Duplicate_Count', acct_col], ascending=[False, True])
                     
                     def highlight(row):
-                        return ['background-color: rgba(255, 0, 0, 0.2)'] * len(row) if row['Duplicate_Count'] > 1 else [''] * len(row)
+                        if row['Duplicate_Count'] > 1:
+                            return ['background-color: rgba(255, 0, 0, 0.2)'] * len(row)
+                        return [''] * len(row)
                     
                     dups = len(sorted_df[sorted_df['Duplicate_Count'] > 1])
-                    if dups > 0: st.warning(f"🚨 Found {dups} Conflict Rows")
-                    else: st.success("✅ No duplicates found")
                     
-                    # Cleanup
+                    if dups > 0: 
+                        st.warning(f"🚨 Found {dups} Conflict Rows")
+                    else: 
+                        st.success("✅ No duplicates found")
+                    
+                    # Cleanup: Remove helper column
                     sorted_df = sorted_df.drop(columns=['_clean_id'])
                     
                     display_cols = final_cols if final_cols else [c for c in sorted_df.columns if c != 'Duplicate_Count']
@@ -180,8 +191,10 @@ if st.session_state.df is not None:
     elif selected_page == "📈 The Visualizer":
         st.title("📈 Instant Analytics")
         c1, c2, c3 = st.columns(3)
-        with c1: chart_type = st.selectbox("Chart Type", ["Bar", "Line", "Scatter", "Pie"])
-        with c2: x_axis = st.selectbox("X Axis", df.columns)
+        with c1: 
+            chart_type = st.selectbox("Chart Type", ["Bar", "Line", "Scatter", "Pie"])
+        with c2: 
+            x_axis = st.selectbox("X Axis", df.columns)
         with c3: 
             num_cols = df.select_dtypes(include=['number']).columns
             y_axis = st.selectbox("Y Axis", num_cols) if len(num_cols) > 0 else None
