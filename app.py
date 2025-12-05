@@ -7,7 +7,6 @@ from openai import OpenAI
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="DataStudio Pro", page_icon="⚡", layout="wide")
 
-# Custom CSS for Metrics
 st.markdown("""
     <style>
     .metric-card {
@@ -28,7 +27,7 @@ st.markdown("""
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/1256/1256628.png", width=50)
     st.title("DataStudio Pro")
-    st.caption("v3.8 Final Edition")
+    st.caption("v3.9 Stable Edition")
     st.divider()
 
     selected_page = st.radio(
@@ -53,7 +52,6 @@ with st.sidebar:
     st.divider()
     uploaded_file = st.file_uploader("Upload Dataset", type=["xlsx", "xls", "csv", "txt"])
     
-    # EMERGENCY RESET BUTTON
     if st.button("🔄 Reset App"):
         st.session_state.clear()
         st.rerun()
@@ -66,21 +64,16 @@ if uploaded_file:
     try:
         header_opt = 0 if has_header else None
         if uploaded_file.name.endswith(('.csv', '.txt')):
-            # Using default engine to avoid common parser errors
             st.session_state.df = pd.read_csv(uploaded_file, header=header_opt)
         else:
             st.session_state.df = pd.read_excel(uploaded_file, header=header_opt)
-            
-        # Success message
         st.toast("File loaded successfully!", icon="✅")
-            
     except Exception as e:
         st.error(f"❌ Error loading file: {e}")
 
 # --- 4. MAIN APP LOGIC ---
 if st.session_state.df is not None:
     df = st.session_state.df
-    # 1. Force all headers to be strings
     df.columns = df.columns.astype(str)
     
     # ==========================
@@ -137,9 +130,7 @@ if st.session_state.df is not None:
                     df[date_col] = pd.to_datetime(df[date_col], errors='coerce').dt.date
                 except: pass
                 
-                # Robust ID Cleaning
                 df['_clean_id'] = df[acct_col].astype(str).str.strip().str.lower()
-                
                 target_rows = df[df[date_col] == target_date]
                 active_ids = target_rows['_clean_id'].unique()
                 
@@ -168,79 +159,4 @@ if st.session_state.df is not None:
                     
                     buffer = io.BytesIO()
                     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                        sorted_df[display_cols].to_excel(writer, index=False)
-                    st.download_button("📥 Download Excel", buffer.getvalue(), "Sorted_Report.xlsx")
-                else:
-                    st.error(f"No records found for {target_date}")
-
-    # ==========================
-    # 3. VISUALIZER
-    # ==========================
-    elif selected_page == "📈 The Visualizer":
-        st.title("📈 Instant Analytics")
-        c1, c2, c3 = st.columns(3)
-        with c1: chart_type = st.selectbox("Chart Type", ["Bar", "Line", "Scatter", "Pie"])
-        with c2: x_axis = st.selectbox("X Axis", df.columns)
-        with c3: 
-            num_cols = df.select_dtypes(include=['number']).columns
-            y_axis = st.selectbox("Y Axis", num_cols) if len(num_cols) > 0 else None
-            
-        if y_axis:
-            if chart_type == "Bar": fig = px.bar(df, x=x_axis, y=y_axis)
-            elif chart_type == "Line": fig = px.line(df, x=x_axis, y=y_axis)
-            elif chart_type == "Scatter": fig = px.scatter(df, x=x_axis, y=y_axis)
-            elif chart_type == "Pie": fig = px.pie(df, names=x_axis, values=y_axis)
-            st.plotly_chart(fig, use_container_width=True)
-
-    # ==========================
-    # 4. JANITOR
-    # ==========================
-    elif selected_page == "🧹 The Janitor":
-        st.title("🧹 Data Hygiene")
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🗑️ Remove Exact Duplicates"):
-                st.session_state.df = df.drop_duplicates()
-                st.success("Cleaned.")
-                st.rerun()
-        with c2:
-            if st.button("🩸 Fill N/A values"):
-                st.session_state.df = df.fillna("N/A")
-                st.success("Filled N/A")
-                st.rerun()
-        st.dataframe(df.head())
-
-    # ==========================
-    # 5. AI ANALYST (STRICT NO-CODE)
-    # ==========================
-    elif selected_page == "🤖 AI Analyst":
-        st.title("🤖 AI Data Analyst")
-        st.caption("Answers in plain English. No code output.")
-        
-        if not api_key:
-            st.error("⚠️ AI Key not found. Please check .streamlit/secrets.toml")
-        else:
-            q = st.text_input("Ask a question about your data:")
-            if q:
-                try:
-                    # USE THE SECURE KEY
-                    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
-                    
-                    cols_str = ', '.join(df.columns)
-                    rows_str = df.head().to_string(index=False)
-                    
-                    # STRICT PROMPT
-                    prompt = f"""
-                    You are a Business Intelligence Analyst. 
-                    
-                    DATA CONTEXT:
-                    Columns: {cols_str}
-                    First 5 rows:
-                    {rows_str}
-                    
-                    USER QUESTION: {q}
-                    
-                    INSTRUCTIONS:
-                    1. Answer the question in plain English.
-                    2. Do NOT provide Python code, SQL, or programming scripts.
-                    3. Focus on business insights, trends,
+                        sorted
