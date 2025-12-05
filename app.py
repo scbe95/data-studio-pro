@@ -27,7 +27,7 @@ st.markdown("""
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/1256/1256628.png", width=50)
     st.title("DataStudio Pro")
-    st.caption("v3.5 Secure AI Edition")
+    st.caption("v3.6 Insight Edition")
     st.divider()
 
     selected_page = st.radio(
@@ -41,7 +41,6 @@ with st.sidebar:
         has_header = st.checkbox("File has headers", value=True)
     
     # --- SECURE KEY LOADING ---
-    # The app looks for the key in the hidden secrets file automatically
     api_key = None
     try:
         if "GROQ_API_KEY" in st.secrets:
@@ -137,94 +136,4 @@ if st.session_state.df is not None:
                     filtered_df = target_rows.copy()
 
                 if not filtered_df.empty:
-                    global_counts = df['_clean_id'].value_counts()
-                    filtered_df['Duplicate_Count'] = filtered_df['_clean_id'].map(global_counts)
-                    sorted_df = filtered_df.sort_values(by=['Duplicate_Count', acct_col], ascending=[False, True])
-                    
-                    def highlight(row):
-                        return ['background-color: rgba(255, 0, 0, 0.2)'] * len(row) if row['Duplicate_Count'] > 1 else [''] * len(row)
-                    
-                    dups = len(sorted_df[sorted_df['Duplicate_Count'] > 1])
-                    if dups > 0: st.warning(f"🚨 Found {dups} Conflict Rows")
-                    else: st.success("✅ No duplicates found")
-                    
-                    sorted_df = sorted_df.drop(columns=['_clean_id'])
-                    display_cols = final_cols if final_cols else [c for c in sorted_df.columns if c != 'Duplicate_Count']
-                    if 'Duplicate_Count' not in display_cols: display_cols.insert(0, 'Duplicate_Count')
-                        
-                    st.dataframe(sorted_df[display_cols].style.apply(highlight, axis=1), use_container_width=True)
-                    
-                    buffer = io.BytesIO()
-                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                        sorted_df[display_cols].to_excel(writer, index=False)
-                    st.download_button("📥 Download Excel", buffer.getvalue(), "Sorted_Report.xlsx")
-                else:
-                    st.error(f"No records found for {target_date}")
-
-    # ==========================
-    # 3. VISUALIZER
-    # ==========================
-    elif selected_page == "📈 The Visualizer":
-        st.title("📈 Instant Analytics")
-        c1, c2, c3 = st.columns(3)
-        with c1: chart_type = st.selectbox("Chart Type", ["Bar", "Line", "Scatter", "Pie"])
-        with c2: x_axis = st.selectbox("X Axis", df.columns)
-        with c3: 
-            num_cols = df.select_dtypes(include=['number']).columns
-            y_axis = st.selectbox("Y Axis", num_cols) if len(num_cols) > 0 else None
-            
-        if y_axis:
-            if chart_type == "Bar": fig = px.bar(df, x=x_axis, y=y_axis)
-            elif chart_type == "Line": fig = px.line(df, x=x_axis, y=y_axis)
-            elif chart_type == "Scatter": fig = px.scatter(df, x=x_axis, y=y_axis)
-            elif chart_type == "Pie": fig = px.pie(df, names=x_axis, values=y_axis)
-            st.plotly_chart(fig, use_container_width=True)
-
-    # ==========================
-    # 4. JANITOR
-    # ==========================
-    elif selected_page == "🧹 The Janitor":
-        st.title("🧹 Data Hygiene")
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🗑️ Remove Exact Duplicates"):
-                st.session_state.df = df.drop_duplicates()
-                st.success("Cleaned.")
-                st.rerun()
-        with c2:
-            if st.button("🩸 Fill N/A values"):
-                st.session_state.df = df.fillna("N/A")
-                st.success("Filled N/A")
-                st.rerun()
-        st.dataframe(df.head())
-
-    # ==========================
-    # 5. AI ANALYST (SECURE)
-    # ==========================
-    elif selected_page == "🤖 AI Analyst":
-        st.title("🤖 AI Data Analyst")
-        
-        if not api_key:
-            st.error("⚠️ AI Key not found. Please check .streamlit/secrets.toml")
-        else:
-            q = st.text_input("Ask a question:", placeholder="e.g. What is the most common Account ID?")
-            if q:
-                try:
-                    # USE THE SECURE KEY
-                    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
-                    
-                    cols_str = ', '.join(df.columns)
-                    rows_str = df.head().to_string(index=False)
-                    prompt = f"Analyze this dataset:\nColumns: {cols_str}\nFirst 5 rows:\n{rows_str}\n\nQuestion: {q}\nAnswer concisely."
-                    
-                    with st.spinner("Analyzing..."):
-                        response = client.chat.completions.create(
-                            model="llama-3.1-8b-instant",
-                            messages=[{"role": "user", "content": prompt}]
-                        )
-                        st.info(response.choices[0].message.content)
-                except Exception as e: st.error(f"Error: {e}")
-
-else:
-    st.markdown("<br><h1 style='text-align:center'>👋 DataStudio Pro</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center'>Upload a file to begin.</p>", unsafe_allow_html=True)
+                    global_counts
